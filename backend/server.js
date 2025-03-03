@@ -32,8 +32,9 @@ app.get('/', (req, res) => {
   res.send('API funcionando 🚀');
 });
 
+// Importar rutas
 const authRoutes = require('./routes/auth');
-app.use('/api/auth', authRoutes);
+app.use('/api', authRoutes);
 
 app.listen(port, () => {
   console.log(`✅ Servidor corriendo en http://localhost:${port}`);
