@@ -13,12 +13,13 @@ import { IonicModule, NavController } from '@ionic/angular';
 })
 export class RegistrarEstudiantePage {
   nombre: string = '';
-  apellidos: string = '';
-  fechaNacimiento: string = '';
-  unidadAcademica: string = '';
-  licenciatura: string = '';
+  correoPersonal: string = '';
+  correoInstitucional: string = '';
+  facultad: string = '';
   matricula: string = '';
-  password: string = '';
+  telefono: string = '';
+  fotoPerfil: string = '';
+  contrasena: string = '';
 
   apiUrl = 'http://localhost:3000/api/auth/register'; // URL de la API
 
@@ -27,12 +28,13 @@ export class RegistrarEstudiantePage {
   register() {
     const userData = {
       nombre: this.nombre,
-      apellidos: this.apellidos,
-      fecha_nacimiento: this.fechaNacimiento,
-      unidad_academica: this.unidadAcademica,
-      licenciatura: this.licenciatura,
+      correo_personal: this.correoPersonal,
+      correo_institucional: this.correoInstitucional,
+      contrasena: this.contrasena,
+      facultad: this.facultad,
       matricula: this.matricula,
-      password: this.password
+      telefono: this.telefono || null,
+      foto_perfil: this.fotoPerfil || null
     };
 
     this.http.post(this.apiUrl, userData).subscribe(

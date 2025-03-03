@@ -14,19 +14,19 @@ const db = mysql.createConnection({
   database: process.env.DB_NAME
 });
 
-// Registro de usuario
+// 📌 REGISTRO DE ESTUDIANTE
 router.post('/register', async (req, res) => {
-  const { nombre, apellidos, fecha_nacimiento, unidad_academica, licenciatura, matricula, password } = req.body;
+  const { nombre, correo_personal, correo_institucional, contrasena, facultad, matricula, telefono, foto_perfil } = req.body;
 
-  if (!nombre || !apellidos || !matricula || !password) {
-    return res.status(400).json({ message: 'Todos los campos son obligatorios' });
+  if (!nombre || !correo_personal || !correo_institucional || !contrasena || !facultad || !matricula) {
+    return res.status(400).json({ message: 'Todos los campos obligatorios deben estar llenos' });
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(contrasena, 10);
 
   db.query(
-    'INSERT INTO estudiantes (nombre, apellidos, fecha_nacimiento, unidad_academica, licenciatura, matricula, password) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [nombre, apellidos, fecha_nacimiento, unidad_academica, licenciatura, matricula, hashedPassword],
+    'INSERT INTO estudiantes (nombre, correo_personal, correo_institucional, contraseña, facultad, matricula, telefono, foto_perfil) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [nombre, correo_personal, correo_institucional, hashedPassword, facultad, matricula, telefono || null, foto_perfil || null],
     (err, result) => {
       if (err) {
         console.error('Error al registrar usuario:', err);
@@ -37,13 +37,14 @@ router.post('/register', async (req, res) => {
   );
 });
 
-// Iniciar sesión
+
+// 📌 LOGIN DE ESTUDIANTE
 router.post('/login', (req, res) => {
-  const { matricula, password } = req.body;
+  const { matricula, contraseña } = req.body;
 
   db.query('SELECT * FROM estudiantes WHERE matricula = ?', [matricula], async (err, results) => {
     if (err) {
-      console.error('Error al buscar usuario:', err);
+      console.error('Error al buscar estudiante:', err);
       return res.status(500).json({ message: 'Error interno del servidor' });
     }
 
@@ -51,16 +52,20 @@ router.post('/login', (req, res) => {
       return res.status(401).json({ message: 'Matrícula o contraseña incorrecta' });
     }
 
-    const user = results[0];
-    const validPassword = await bcrypt.compare(password, user.password);
+    const estudiante = results[0];
+    const validPassword = await bcrypt.compare(contraseña, estudiante.contraseña);
 
     if (!validPassword) {
       return res.status(401).json({ message: 'Matrícula o contraseña incorrecta' });
     }
 
-    const token = jwt.sign({ id: user.id, matricula: user.matricula }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign(
+      { id: estudiante.id_estudiante, matricula: estudiante.matricula, nombre: estudiante.nombre },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
 
-    res.json({ message: 'Login exitoso', token });
+    res.json({ message: 'Login exitoso', token, estudiante });
   });
 });
 

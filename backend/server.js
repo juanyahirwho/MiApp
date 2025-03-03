@@ -21,10 +21,10 @@ const db = mysql.createConnection({
 
 db.connect(err => {
   if (err) {
-    console.error('Error al conectar a la base de datos:', err);
+    console.error('❌ Error al conectar a la base de datos:', err);
     return;
   }
-  console.log('📌 Conectado a MySQL');
+  console.log('📌 Conectado a MySQL - Base de Datos control_vehiculos');
 });
 
 // Rutas de prueba
@@ -34,7 +34,6 @@ app.get('/', (req, res) => {
 
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
-
 
 app.listen(port, () => {
   console.log(`✅ Servidor corriendo en http://localhost:${port}`);
