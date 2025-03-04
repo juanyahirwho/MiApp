@@ -37,12 +37,16 @@ export class RegistrarEstudiantePage {
       telefono: this.telefono || null,
       foto_perfil: this.fotoPerfil || null
     };
-
+  
     this.http.post(this.apiUrl, userData).subscribe(
       (response: any) => {
         console.log('Registro exitoso:', response);
         alert('Registro exitoso');
-        this.navCtrl.navigateRoot('/login'); // Redirige al login después de registrarse
+  
+        // 🔹 Esperar un breve momento antes de redirigir
+        setTimeout(() => {
+          this.navCtrl.navigateRoot('/'); // Asegurar que regrese al login
+        }, 500); 
       },
       (error) => {
         console.error('Error en el registro:', error);
@@ -50,8 +54,10 @@ export class RegistrarEstudiantePage {
       }
     );
   }
-
+    
   goBack() {
-    this.navCtrl.navigateBack('/login'); // Regresar a la pantalla de login
+    this.navCtrl.navigateRoot('/'); // 🔹 Asegurar que regrese al login
   }
+  
+  
 }
