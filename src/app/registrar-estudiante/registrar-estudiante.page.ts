@@ -21,7 +21,8 @@ export class RegistrarEstudiantePage {
   fotoPerfil: string = '';
   contrasena: string = '';
 
-  apiUrl = 'http://localhost:3000/api/auth/register'; // URL de la API
+  apiUrl = 'http://localhost:3000/api/estudiante/register';
+
 
   constructor(private navCtrl: NavController, private http: HttpClient) {}
 
