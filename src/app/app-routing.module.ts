@@ -14,7 +14,20 @@ const routes: Routes = [
   {
     path: 'registrar-estudiante',
     loadComponent: () => import('./registrar-estudiante/registrar-estudiante.page').then(m => m.RegistrarEstudiantePage)
+  },
+  {
+    path: 'home-admin',
+    loadComponent: () => import('./home-admin/home-admin.page').then(m => m.HomeAdminPage)
+  },
+  {
+    path: 'home-vigilante',
+    loadComponent: () => import('./home-vigilante/home-vigilante.page').then(m => m.HomeVigilantePage)
+  },
+  {
+    path: 'registrar-vigilante',
+    loadComponent: () => import('./registrar-vigilante/registrar-vigilante.page').then(m => m.RegistrarVigilantePage)
   }
+  
 ];
 
 @NgModule({
