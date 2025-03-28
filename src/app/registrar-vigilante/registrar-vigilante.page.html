@@ -1,0 +1,81 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home-admin" class="btn-back"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Registrar Nuevo Vigilante</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="form-content">
+  <form (ngSubmit)="register()">
+    <!-- Campos en dos columnas -->
+    <ion-grid>
+      <ion-row>
+        <ion-col size="12" size-md="6">
+          <ion-item>
+            <ion-label position="floating">Nombre Completo</ion-label>
+            <ion-input 
+              type="text" 
+              [(ngModel)]="nombre" 
+              name="nombre"
+              required>
+            </ion-input>
+          </ion-item>
+        </ion-col>
+
+        <ion-col size="12" size-md="6">
+          <ion-item>
+            <ion-label position="floating">Clave (10 dígitos)</ion-label>
+            <ion-input 
+              type="number" 
+              [(ngModel)]="clave" 
+              name="clave"
+              required
+              pattern="[0-9]{10}">
+            </ion-input>
+          </ion-item>
+        </ion-col>
+      </ion-row>
+
+      <!-- Campos de ancho completo -->
+      <ion-row>
+        <ion-col size="12">
+          <ion-item>
+            <ion-label position="floating">Contraseña</ion-label>
+            <ion-input 
+              type="password" 
+              [(ngModel)]="contrasena" 
+              name="contrasena"
+              required
+              minlength="6">
+            </ion-input>
+          </ion-item>
+        </ion-col>
+
+        <ion-col size="12">
+          <ion-item>
+            <ion-label>Acceso Asignado</ion-label>
+            <ion-select 
+              [(ngModel)]="acceso" 
+              name="acceso"
+              interface="action-sheet"
+              required>
+              <ion-select-option *ngFor="let acceso of accesos" [value]="acceso">
+                {{acceso}}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <!-- Botón de envío -->
+    <ion-button 
+      type="submit" 
+      expand="block" 
+      class="btn-submit">
+      Registrar Vigilante
+    </ion-button>
+  </form>
+</ion-content>
