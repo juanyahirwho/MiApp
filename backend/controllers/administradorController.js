@@ -12,7 +12,7 @@ const db = mysql.createConnection({
   database: process.env.DB_NAME
 });
 
-// Registro del administrador
+// 📌 REGISTRO DE ADMINISTRADOR
 administradorRouter.post('/register', async (req, res) => {
   try {
     const { nombre, correo, contrasena } = req.body;
@@ -23,59 +23,50 @@ administradorRouter.post('/register', async (req, res) => {
     }
 
     // Validar formato de correo
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(correo)) {
       return res.status(400).json({ message: 'Formato de correo electrónico inválido' });
     }
 
     // Verificar si el correo ya existe
-    db.query('SELECT * FROM administradores WHERE correo = ?', [correo], async (err, results) => {
-      if (err) {
-        console.error('Error al verificar correo:', err);
-        return res.status(500).json({ message: 'Error interno del servidor' });
-      }
+    const [results] = await db.promise().query('SELECT * FROM administradores WHERE correo = ?', [correo]);
+    if (results.length > 0) {
+      return res.status(400).json({ message: 'El correo electrónico ya está registrado' });
+    }
 
-      if (results.length > 0) {
-        return res.status(400).json({ message: 'El correo electrónico ya está registrado' });
-      }
+    // Hash de la contraseña
+    const hashedPassword = await bcrypt.hash(contrasena, 10);
 
-      // Hash de la contraseña
-      const hashedPassword = await bcrypt.hash(contrasena, 10);
+    // Insertar nuevo administrador
+    await db.promise().query(
+      'INSERT INTO administradores (nombre, correo, contraseña) VALUES (?, ?, ?)',
+      [nombre, correo, hashedPassword]
+    );
 
-      // Insertar nuevo administrador
-      db.query(
-        'INSERT INTO administradores (nombre, correo, contraseña) VALUES (?, ?, ?)',
-        [nombre, correo, hashedPassword],
-        (err, result) => {
-          if (err) {
-            console.error('Error al registrar administrador:', err);
-            return res.status(500).json({ message: 'Error al registrar administrador' });
-          }
-          res.status(201).json({ message: 'Administrador registrado correctamente' });
-        }
-      );
-    });
+    res.status(201).json({ message: 'Administrador registrado correctamente' });
   } catch (error) {
-    console.error('Error en el proceso de registro:', error);
+    console.error('Error en el registro de administrador:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
 
-// Login del administrador
-administradorRouter.post('/login', (req, res) => {
-  const { correo, contraseña } = req.body;
+// 📌 LOGIN DE ADMINISTRADOR
+administradorRouter.post('/login', async (req, res) => {
+  try {
+    const { correo, contrasena } = req.body;
 
-  db.query('SELECT * FROM administradores WHERE correo = ?', [correo], async (err, results) => {
-    if (err) {
-      console.error('Error al buscar administrador:', err);
-      return res.status(500).json({ message: 'Error interno del servidor' });
+    if (!correo || !contrasena) {
+      return res.status(400).json({ message: 'Correo y contraseña son requeridos' });
     }
 
+    const [results] = await db.promise().query('SELECT * FROM administradores WHERE correo = ?', [correo]);
+    
     if (results.length === 0) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
     const administrador = results[0];
-    const validPassword = await bcrypt.compare(contraseña, administrador.contraseña);
+    const validPassword = await bcrypt.compare(contrasena, administrador.contraseña);
 
     if (!validPassword) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
@@ -90,14 +81,18 @@ administradorRouter.post('/login', (req, res) => {
       { expiresIn: '1h' }
     );
 
-    
-    delete administrador.contraseña; // Eliminamos la contraseña del objeto antes de enviarlo
+    // Eliminar contraseña antes de enviar la respuesta
+    delete administrador.contraseña;
 
     res.json({ 
       message: 'Inicio de sesión exitoso',
       token,
-      administrador // Enviamos el objeto sin la contraseña
+      administrador
     });
-  });
+  } catch (error) {
+    console.error('Error en el login de administrador:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
 });
+
 module.exports = administradorRouter;

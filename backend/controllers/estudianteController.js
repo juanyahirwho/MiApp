@@ -16,56 +16,87 @@ const db = mysql.createConnection({
 
 // 📌 REGISTRO DE ESTUDIANTE
 estudianteRouter.post('/register', async (req, res) => {
-  const { nombre, correo_personal, correo_institucional, contrasena, facultad, matricula, telefono, foto_perfil } = req.body;
+  try {
+    const { nombre, correo_personal, correo_institucional, contrasena, facultad, matricula, telefono, foto_perfil } = req.body;
 
-  if (!nombre || !correo_personal || !correo_institucional || !contrasena || !facultad || !matricula) {
-    return res.status(400).json({ message: 'Todos los campos obligatorios deben estar llenos' });
-  }
-
-  const hashedPassword = await bcrypt.hash(contrasena, 10);
-
-  db.query(
-    'INSERT INTO estudiantes (nombre, correo_personal, correo_institucional, contraseña, facultad, matricula, telefono, foto_perfil) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    [nombre, correo_personal, correo_institucional, hashedPassword, facultad, matricula, telefono || null, foto_perfil || null],
-    (err, result) => {
-      if (err) {
-        console.error('Error al registrar usuario:', err);
-        return res.status(500).json({ message: 'Error al registrar usuario' });
-      }
-      res.json({ message: 'Usuario registrado correctamente' });
+    // Validaciones
+    if (!nombre || !correo_personal || !correo_institucional || !contrasena || !facultad || !matricula) {
+      return res.status(400).json({ message: 'Todos los campos obligatorios deben estar llenos' });
     }
-  );
+
+    // Validar formato de correos
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(correo_personal) || !emailRegex.test(correo_institucional)) {
+      return res.status(400).json({ message: 'Formato de correo electrónico inválido' });
+    }
+
+    // Verificar si la matrícula ya existe
+    const [matriculaExists] = await db.promise().query('SELECT * FROM estudiantes WHERE matricula = ?', [matricula]);
+    if (matriculaExists.length > 0) {
+      return res.status(400).json({ message: 'La matrícula ya está registrada' });
+    }
+
+    // Hash de la contraseña
+    const hashedPassword = await bcrypt.hash(contrasena, 10);
+
+    // Insertar nuevo estudiante
+    await db.promise().query(
+      'INSERT INTO estudiantes (nombre, correo_personal, correo_institucional, contraseña, facultad, matricula, telefono, foto_perfil) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [nombre, correo_personal, correo_institucional, hashedPassword, facultad, matricula, telefono || null, foto_perfil || null]
+    );
+
+    res.status(201).json({ message: 'Estudiante registrado correctamente' });
+  } catch (error) {
+    console.error('Error en el registro de estudiante:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
 });
 
 // 📌 LOGIN DE ESTUDIANTE
-estudianteRouter.post('/login', (req, res) => {
-  const { matricula, contraseña } = req.body;
+estudianteRouter.post('/login', async (req, res) => {
+  try {
+    const { matricula, contrasena } = req.body;
 
-  db.query('SELECT * FROM estudiantes WHERE matricula = ?', [matricula], async (err, results) => {
-    if (err) {
-      console.error('Error al buscar estudiante:', err);
-      return res.status(500).json({ message: 'Error interno del servidor' });
+    if (!matricula || !contrasena) {
+      return res.status(400).json({ message: 'Matrícula y contraseña son requeridas' });
     }
 
+    const [results] = await db.promise().query('SELECT * FROM estudiantes WHERE matricula = ?', [matricula]);
+    
     if (results.length === 0) {
       return res.status(401).json({ message: 'Matrícula o contraseña incorrecta' });
     }
 
     const estudiante = results[0];
-    const validPassword = await bcrypt.compare(contraseña, estudiante.contraseña);
+    const validPassword = await bcrypt.compare(contrasena, estudiante.contraseña);
 
     if (!validPassword) {
       return res.status(401).json({ message: 'Matrícula o contraseña incorrecta' });
     }
 
     const token = jwt.sign(
-      { id: estudiante.id_estudiante, matricula: estudiante.matricula, nombre: estudiante.nombre },
+      { 
+        id: estudiante.id_estudiante, 
+        matricula: estudiante.matricula, 
+        nombre: estudiante.nombre,
+        role: 'estudiante'
+      },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
 
-    res.json({ message: 'Login exitoso', token, estudiante });
-  });
+    // Eliminar contraseña antes de enviar la respuesta
+    delete estudiante.contraseña;
+
+    res.json({ 
+      message: 'Login exitoso', 
+      token, 
+      estudiante 
+    });
+  } catch (error) {
+    console.error('Error en el login de estudiante:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
 });
 
 module.exports = estudianteRouter;

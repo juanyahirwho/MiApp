@@ -55,6 +55,19 @@
 
         <ion-col size="12">
           <ion-item>
+            <ion-label position="floating">Confirmar Contraseña</ion-label>
+            <ion-input 
+              type="password" 
+              [(ngModel)]="confirmarContrasena" 
+              name="confirmarContrasena"
+              required
+              minlength="6">
+            </ion-input>
+          </ion-item>
+        </ion-col>
+
+        <ion-col size="12">
+          <ion-item>
             <ion-label>Acceso Asignado</ion-label>
             <ion-select 
               [(ngModel)]="acceso" 

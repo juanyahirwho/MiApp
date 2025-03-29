@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, NavController } from '@ionic/angular';
+import { IonicModule, NavController, AlertController } from '@ionic/angular';
 
 @Component({
   selector: 'app-registrar-vigilante',
@@ -15,6 +15,7 @@ export class RegistrarVigilantePage {
   nombre: string = '';
   clave: string = '';
   contrasena: string = '';
+  confirmarContrasena: string = '';
   acceso: string = '';
 
   accesos = [
@@ -30,11 +31,25 @@ export class RegistrarVigilantePage {
     'Acceso 11, Blvd. Municipio libre (Seminarios)'
   ];
 
-  apiUrl = 'http://localhost:3000/api/vigilante/register';
+  private apiUrl = 'http://localhost:3000/api/vigilante/register';
 
-  constructor(private navCtrl: NavController, private http: HttpClient) {}
+  constructor(
+    private navCtrl: NavController,
+    private http: HttpClient,
+    private alertCtrl: AlertController
+  ) {}
 
-  register() {
+  async register() {
+    if (!this.nombre || !this.clave || !this.contrasena || !this.acceso) {
+      await this.showAlert('Error', 'Todos los campos son obligatorios');
+      return;
+    }
+
+    if (this.contrasena !== this.confirmarContrasena) {
+      await this.showAlert('Error', 'Las contraseñas no coinciden');
+      return;
+    }
+
     const vigilanteData = {
       nombre: this.nombre,
       clave: this.clave,
@@ -42,23 +57,24 @@ export class RegistrarVigilantePage {
       acceso: this.acceso
     };
 
-    this.http.post(this.apiUrl, vigilanteData).subscribe(
-      (response: any) => {
-        console.log('Registro exitoso:', response);
-        alert('Vigilante registrado correctamente');
-        
-        setTimeout(() => {
-          this.navCtrl.navigateBack('/admin');
-        }, 500);
-      },
-      (error) => {
-        console.error('Error en el registro:', error);
-        alert(error.error?.message || 'Error en el registro');
-      }
-    );
+    try {
+      const response: any = await this.http.post(this.apiUrl, vigilanteData).toPromise();
+      console.log('Registro exitoso:', response);
+      await this.showAlert('Éxito', 'Vigilante registrado correctamente');
+      this.navCtrl.navigateBack('/home-admin');
+    } catch (error: any) {
+      console.error('Error en el registro:', error);
+      const errorMessage = error.error?.message || 'Error en el registro';
+      await this.showAlert('Error', errorMessage);
+    }
   }
 
-  goBack() {
-    this.navCtrl.navigateBack('/home-admin');
+  private async showAlert(header: string, message: string) {
+    const alert = await this.alertCtrl.create({
+      header,
+      message,
+      buttons: ['OK']
+    });
+    await alert.present();
   }
 }
