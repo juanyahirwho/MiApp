@@ -26,7 +26,12 @@ const routes: Routes = [
   {
     path: 'registrar-vigilante',
     loadComponent: () => import('./registrar-vigilante/registrar-vigilante.page').then(m => m.RegistrarVigilantePage)
+  },
+  {
+    path: 'gestion-vigilantes',
+    loadComponent: () => import('./gestion-vigilantes/gestion-vigilantes.page').then( m => m.GestionVigilantesPage)
   }
+
   
 ];
 

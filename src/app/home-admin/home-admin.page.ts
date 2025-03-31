@@ -39,7 +39,7 @@ export class HomeAdminPage {
       title: 'Vigilantes',
       description: 'Visualiza y gestiona el personal de vigilancia',
       icon: 'people-circle-outline',
-      route: 'vigilantes'
+      route: 'gestion-vigilantes'
     },
     {
       title: 'Vehículos',
@@ -71,6 +71,12 @@ export class HomeAdminPage {
     // Verifica si es la ruta de registro de vigilante
     if (page === 'registrar-vigilante') {
       this.navCtrl.navigateForward('/registrar-vigilante', {
+        animationDirection: 'forward',
+        state: { isAdmin: true }  // Puedes enviar datos adicionales si es necesario
+      });
+    } 
+    if (page === 'gestion-vigilantes') {
+      this.navCtrl.navigateForward('/gestion-vigilantes', {
         animationDirection: 'forward',
         state: { isAdmin: true }  // Puedes enviar datos adicionales si es necesario
       });

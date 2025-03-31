@@ -1,0 +1,149 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Administración de Vigilantes</ion-title>
+    <ion-buttons slot="end">
+      <ion-button routerLink="/home-admin">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="vigilantes-content">
+  <!-- Barra de búsqueda -->
+  <div class="action-bar">
+    <ion-searchbar 
+      placeholder="Buscar vigilante..." 
+      animated 
+      debounce="300" 
+      (ionInput)="searchVigilantes($event)">
+    </ion-searchbar>
+  </div>
+
+  <!-- Listado de vigilantes -->
+  <div class="vigilantes-grid">
+    <ion-card *ngFor="let vigilante of vigilantes" class="vigilante-card">
+      <div class="card-header">
+        <ion-icon name="person-circle-outline" class="vigilante-icon"></ion-icon>
+        <ion-card-title>{{ vigilante.nombre }}</ion-card-title>
+        <ion-card-subtitle>Clave: {{ vigilante.clave }}</ion-card-subtitle>
+      </div>
+
+      <ion-card-content>
+        <div class="vigilante-info">
+          <div class="info-item">
+            <ion-icon name="shield-checkmark-outline"></ion-icon>
+            <span>Acceso: {{ vigilante.acceso }}</span>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <ion-button fill="clear" color="warning" (click)="showEditForm(vigilante)">
+            <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+          </ion-button>
+          <ion-button fill="clear" color="danger" (click)="confirmDelete(vigilante)">
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Paginación -->
+  <ion-grid class="pagination-grid">
+    <ion-row>
+      <ion-col size="6" class="ion-text-left">
+        <ion-button fill="clear" [disabled]="currentPage === 1" (click)="previousPage()">
+          <ion-icon slot="start" name="chevron-back-outline"></ion-icon>
+          Anterior
+        </ion-button>
+      </ion-col>
+      <ion-col size="6" class="ion-text-right">
+        <ion-button fill="clear" [disabled]="currentPage === totalPages" (click)="nextPage()">
+          Siguiente
+          <ion-icon slot="end" name="chevron-forward-outline"></ion-icon>
+        </ion-button>
+      </ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col class="ion-text-center">
+        <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <!-- Formulario de edición (overlay) -->
+  <div class="form-overlay" *ngIf="showForm">
+    <div class="form-container">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>Editar Vigilante</ion-card-title>
+          <ion-button fill="clear" class="close-btn" (click)="closeForm()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-card-header>
+        
+        <ion-card-content>
+          <form [formGroup]="vigilanteForm" (ngSubmit)="saveVigilante()">
+            <ion-item>
+              <ion-label position="floating">Nombre</ion-label>
+              <ion-input formControlName="nombre" type="text" required></ion-input>
+            </ion-item>
+            
+            <ion-item>
+              <ion-label position="floating">Clave</ion-label>
+              <ion-input formControlName="clave" type="text" required></ion-input>
+            </ion-item>
+            
+            <ion-item>
+              <ion-label position="floating">Contraseña</ion-label>
+              <ion-input formControlName="contrasena" type="password"></ion-input>
+            </ion-item>
+            
+            <ion-item>
+              <ion-label>Nivel de Acceso</ion-label>
+              <ion-select formControlName="acceso" interface="popover">
+                <ion-select-option value="Acceso 1, 24 sur (Cultura física)">Acceso 1, 24 sur (Cultura física)</ion-select-option>
+                <ion-select-option value="Acceso 3, 18 sur (Ciencias Químicas)">Acceso 3, 18 sur (Ciencias Químicas)</ion-select-option>
+                <ion-select-option value="Acceso 4, 14 sur y San Claudio (Ciencias de la computación)">Acceso 4, 14 sur y San Claudio (Ciencias de la computación)</ion-select-option>
+                <ion-select-option value="Acceso 5, 14 sur (Ciencias de la computación)">Acceso 5, 14 sur (Ciencias de la computación)</ion-select-option>
+                <ion-select-option value="Acceso 6, Blvd. Carlos Camacho (Arquitectura)">Acceso 6, Blvd. Carlos Camacho (Arquitectura)</ion-select-option>
+                <ion-select-option value="Acceso 7, Blvd. Carlos Camacho (Arena Universitaria)">Acceso 7, Blvd. Carlos Camacho (Arena Universitaria)</ion-select-option>
+                <ion-select-option value="Acceso 8, Blvd. Carlos Camacho (Contaduría)">Acceso 8, Blvd. Carlos Camacho (Contaduría)</ion-select-option>
+                <ion-select-option value="Acceso 9, Blvd. Carlos Camacho (Multiaulas)">Acceso 9, Blvd. Carlos Camacho (Multiaulas)</ion-select-option>
+                <ion-select-option value="Acceso 10, Blvd. Carlos Camacho (Biblioteca Central)">Acceso 10, Blvd. Carlos Camacho (Biblioteca Central)</ion-select-option>
+                <ion-select-option value="Acceso 11, Blvd. Municipio libre (Seminarios)">Acceso 11, Blvd. Municipio libre (Seminarios)</ion-select-option>
+              </ion-select>
+            </ion-item>
+            
+            <div class="form-actions">
+              <ion-button type="button" fill="clear" color="medium" (click)="closeForm()">Cancelar</ion-button>
+              <ion-button type="submit" color="primary" [disabled]="!vigilanteForm.valid">Guardar</ion-button>
+            </div>
+          </form>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+
+  <!-- Confirmación de eliminación -->
+  <div class="confirm-overlay" *ngIf="showConfirm">
+    <div class="confirm-container">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>Confirmar Eliminación</ion-card-title>
+        </ion-card-header>
+        
+        <ion-card-content>
+          <p>¿Estás seguro que deseas eliminar al vigilante <strong>{{ vigilanteToDelete?.nombre }}</strong>?</p>
+          <p>Esta acción no se puede deshacer.</p>
+          
+          <div class="confirm-actions">
+            <ion-button fill="clear" color="medium" (click)="cancelDelete()">Cancelar</ion-button>
+            <ion-button color="danger" (click)="deleteVigilante()">Eliminar</ion-button>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+</ion-content>

@@ -12,6 +12,20 @@ const db = mysql.createConnection({
   database: process.env.DB_NAME
 });
 
+// Middleware para verificar el token JWT
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) return res.sendStatus(401);
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+};
+
 // 📌 REGISTRO DE VIGILANTE
 vigilanteRouter.post('/register', async (req, res) => {
   try {
@@ -86,6 +100,127 @@ vigilanteRouter.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Error en el login de vigilante:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// 📌 OBTENER TODOS LOS VIGILANTES (con paginación)
+vigilanteRouter.get('/', authenticateToken, async (req, res) => {
+  try {
+    // Paginación
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // Consulta para obtener vigilantes
+    const [vigilantes] = await db.promise().query(
+      'SELECT id_vigilante, nombre, clave, acceso FROM vigilantes LIMIT ? OFFSET ?',
+      [limit, offset]
+    );
+
+    // Consulta para contar el total de vigilantes
+    const [total] = await db.promise().query('SELECT COUNT(*) as count FROM vigilantes');
+    const totalVigilantes = total[0].count;
+    const totalPages = Math.ceil(totalVigilantes / limit);
+
+    res.json({
+      vigilantes,
+      pagination: {
+        total: totalVigilantes,
+        totalPages,
+        currentPage: page,
+        limit
+      }
+    });
+  } catch (error) {
+    console.error('Error al obtener vigilantes:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// 📌 OBTENER UN VIGILANTE POR ID
+vigilanteRouter.get('/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [results] = await db.promise().query(
+      'SELECT id_vigilante, nombre, clave, acceso FROM vigilantes WHERE id_vigilante = ?',
+      [id]
+    );
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Vigilante no encontrado' });
+    }
+
+    res.json(results[0]);
+  } catch (error) {
+    console.error('Error al obtener vigilante:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// 📌 ACTUALIZAR VIGILANTE
+vigilanteRouter.put('/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, clave, contrasena, acceso } = req.body;
+
+    // Verificar si el vigilante existe
+    const [vigilante] = await db.promise().query('SELECT * FROM vigilantes WHERE id_vigilante = ?', [id]);
+    if (vigilante.length === 0) {
+      return res.status(404).json({ message: 'Vigilante no encontrado' });
+    }
+
+    // Verificar si la nueva clave ya está en uso por otro vigilante
+    if (clave && clave !== vigilante[0].clave) {
+      const [existing] = await db.promise().query('SELECT id_vigilante FROM vigilantes WHERE clave = ? AND id_vigilante != ?', [clave, id]);
+      if (existing.length > 0) {
+        return res.status(400).json({ message: 'La clave ya está en uso por otro vigilante' });
+      }
+    }
+
+    // Hash de la nueva contraseña si se proporciona
+    let hashedPassword = vigilante[0].contraseña;
+    if (contrasena) {
+      hashedPassword = await bcrypt.hash(contrasena, 10);
+    }
+
+    // Actualizar vigilante
+    await db.promise().query(
+      'UPDATE vigilantes SET nombre = ?, clave = ?, contraseña = ?, acceso = ? WHERE id_vigilante = ?',
+      [
+        nombre || vigilante[0].nombre,
+        clave || vigilante[0].clave,
+        hashedPassword,
+        acceso || vigilante[0].acceso,
+        id
+      ]
+    );
+
+    res.json({ message: 'Vigilante actualizado correctamente' });
+  } catch (error) {
+    console.error('Error al actualizar vigilante:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// 📌 ELIMINAR VIGILANTE
+vigilanteRouter.delete('/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verificar si el vigilante existe
+    const [vigilante] = await db.promise().query('SELECT id_vigilante FROM vigilantes WHERE id_vigilante = ?', [id]);
+    if (vigilante.length === 0) {
+      return res.status(404).json({ message: 'Vigilante no encontrado' });
+    }
+
+    // Eliminar vigilante
+    await db.promise().query('DELETE FROM vigilantes WHERE id_vigilante = ?', [id]);
+
+    res.json({ message: 'Vigilante eliminado correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar vigilante:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
